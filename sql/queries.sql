@@ -1,3 +1,4 @@
+--Головний датасет: позиції доставлених замовлень з контекстом
 SELECT o.order_id,
 	   o.order_purchase_t,
        strftime('%Y-%m', o.order_purchase_t) as ym,
@@ -15,3 +16,14 @@ left JOIN product_category_name_translation t USING (product_category)
 left join olist_order_payments_dataset op using(order_id)
 left join olist_order_reviews_dataset r USING(order_id)
 where o.order_status = 'delivered';
+
+--місячний виторг і кількість замовлень
+SELECT
+	  strftime('%Y-%m',o.order_purchase_t) as ym,
+      ROUND(sum(oi.price),2) as revenue,
+      count(DISTINCT o.order_id) as orders
+from olist_orders_dataset o
+join olist_order_items_dataset oi using (order_id)
+where o.order_status = 'delivered'
+GROUP by ym
+order by ym;
