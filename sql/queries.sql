@@ -56,6 +56,9 @@ ORDER BY revenue DESC;
 
 -----------------------------------------------------------------
 --•       середня оцінка (review_score) за категоріями;
+-- Рахує avg(review_score) і кількість відгуків за категоріями, 
+-- але з фільтром HAVING reviews > 50 це важливо, щоб відсіяти категорії з малою кількістю відгуків, 
+-- де середня оцінка статистично не показова (шум від 2-3 відгуків).
 select 
 	   t.product_category_1 as category_en,
        round(avg(r.review_score),2) as avg_score,
@@ -69,12 +72,15 @@ HAVING reviews > 50
 order by avg_score desc;
 -----------------------------------------------------------------
 -- середній час доставки (різниця між датою купівлі і датою доставки)
+-- Різниця в днях між покупкою і доставкою через julianday(), усереднена по всіх доставлених замовленнях.
+-- Результат  12.6
 select 
   	   round(avg(julianday(order_delivered_6) - julianday(order_purchase_t)),1) as avg_delivery_days
 from olist_orders_dataset 
 where order_status = 'delivered' and order_delivered_6 is not NULL;
 -----------------------------------------------------------------
 -- розподіл способів оплати
+--Рахує кількість транзакцій і сумарну суму за кожним payment_type, сортування за частотою використання.
 select payment_type,
 	   count(*) as n,
        round(sum(payment_value),2) as total_value
