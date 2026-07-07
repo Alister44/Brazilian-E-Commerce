@@ -30,10 +30,6 @@ order by ym;
 ------------------------------------------------------------------------
 -- Розвідувальні запити
 -- •       топ-10 категорій за виторгом;
--- •       виторг за штатами (для карти в Tableau);
--- •       середня оцінка (review_score) за категоріями;
--- •       середній час доставки (різниця між датою купівлі і датою доставки);
--- •       розподіл способів оплати.
 select t.product_category_1 as category_en,
 	   round(sum(oi.price),2) as revenue
 from olist_order_items_dataset oi
@@ -44,3 +40,44 @@ where o.order_status = 'delivered'
 GROUP by category_en
 order by revenue DESC
 limit 10;
+-----------------------------------------------------------------
+
+-- виторг за штатами (для карти в Tableau)
+SELECT
+	cu.customer_state,
+    ROUND(SUM(oi.price), 2) AS revenue,
+    COUNT(DISTINCT o.order_id) AS orders
+FROM olist_order_items_dataset oi
+JOIN olist_orders_dataset o USING (order_id)
+JOIN olist_customers_dataset cu USING (customer_id)
+WHERE o.order_status = 'delivered'
+GROUP BY cu.customer_state
+ORDER BY revenue DESC;
+
+-----------------------------------------------------------------
+--•       середня оцінка (review_score) за категоріями;
+select 
+	   t.product_category_1 as category_en,
+       round(avg(r.review_score),2) as avg_score,
+       count(*) as reviews
+from olist_order_reviews_dataset r
+join olist_order_items_dataset oi using(order_id)
+join olist_products_dataset p using (product_id)
+left join product_category_name_translation t using (product_category)
+GROUP by category_en
+HAVING reviews > 50
+order by avg_score desc;
+-----------------------------------------------------------------
+-- середній час доставки (різниця між датою купівлі і датою доставки)
+select 
+  	   round(avg(julianday(order_delivered_6) - julianday(order_purchase_t)),1) as avg_delivery_days
+from olist_orders_dataset 
+where order_status = 'delivered' and order_delivered_6 is not NULL;
+-----------------------------------------------------------------
+-- розподіл способів оплати
+select payment_type,
+	   count(*) as n,
+       round(sum(payment_value),2) as total_value
+FROM olist_order_payments_dataset
+GROUP by payment_type
+order by n desc
